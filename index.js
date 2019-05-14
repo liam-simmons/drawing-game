@@ -25,6 +25,8 @@ let SOCKET_LIST = [];
 let PLAYER_LIST = []; // figure out how to make this a constant
 let nextId = 0;
 
+let messageId = 0;
+
 const WORD_LIST = [
   "dog",
   "cat",
@@ -76,8 +78,12 @@ io.on("connection", socket => {
     });
 
     socket.on("chatMessage", data => {
-      io.emit("chatMessage", { message: data.message, username });
-
+      io.emit("chatMessage", {
+        message: data.message,
+        username,
+        id: messageId
+      });
+      messageId++;
       if (data.message == word) {
         if (id !== PLAYER_LIST[turnId].id) {
           newTurn();

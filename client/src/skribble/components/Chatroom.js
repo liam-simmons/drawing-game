@@ -1,6 +1,7 @@
 import React from "react";
-import { ListGroup, Form } from "react-bootstrap";
 import { subscribeToChat, sendChatMessage } from "./../api";
+
+import MessageBox from "./MessageBox";
 
 class Chatroom extends React.Component {
   constructor(props) {
@@ -8,10 +9,19 @@ class Chatroom extends React.Component {
 
     this.state = {
       messages: [],
-      chatBox: ""
+      chatBox: "",
+      scrollDown: true
     };
 
     subscribeToChat(this.handleReceivedMessage);
+  }
+
+  componentWillUpdate() {}
+
+  componentDidUpdate() {
+    const test = this.updateScrollDownValue();
+    console.log("test", test);
+    if (test) this.scrollToBottom();
   }
 
   handleReceivedMessage = data => {
@@ -20,17 +30,17 @@ class Chatroom extends React.Component {
         this.setState(prevState => {
           const messages = [
             ...prevState.messages,
-            { username: data.username, message: data.message }
+            { username: data.username, message: data.message, id: data.id }
           ];
           return { ...prevState, messages };
         });
         break;
       }
-      case "leaverMessage": {
+      /*case "leaverMessage": {
         this.setState(prevState => {
           const messages = [
             ...prevState.messages,
-            { message: `${data.username} has left` }
+            { message: `${data.username} has left`, id: data.id }
           ];
           return { ...prevState, messages };
         });
@@ -40,12 +50,12 @@ class Chatroom extends React.Component {
         this.setState(prevState => {
           const messages = [
             ...prevState.messages,
-            { message: `${data.username} has connected  ` }
+            { message: `${data.username} has connected  `, id: data.id }
           ];
           return { ...prevState, messages };
         });
         break;
-      }
+      }*/
       default:
         break;
     }
@@ -57,7 +67,6 @@ class Chatroom extends React.Component {
 
   onSubmit = () => {
     if (this.state.chatBox) {
-      console.log("sending " + this.state.chatBox);
       this.setState({ chatBox: "" });
       sendChatMessage(this.state.username, this.state.chatBox);
     }
@@ -66,32 +75,58 @@ class Chatroom extends React.Component {
   onEnterPress = e => {
     if (e.keyCode === 13 && e.shiftKey === false) {
       e.preventDefault();
-      console.log("hello");
       this.onSubmit();
     }
+  };
+
+  scrollToBottom = () => {
+    const chatroom = this.refs.chatroom;
+    chatroom.scrollTop = chatroom.scrollHeight;
+  };
+
+  updateScrollDownValue = () => {
+    const chatroom = this.refs.chatroom;
+    const chatMessageLength = chatroom.firstChild.lastChild
+      ? chatroom.firstChild.lastChild.clientHeight
+      : 0;
+    const scrolledDown =
+      chatroom.scrollTop + chatroom.clientHeight + 1 + chatMessageLength >=
+      chatroom.scrollHeight;
+
+    if (scrolledDown != this.state.scrollDown) {
+      this.setState({
+        scrollDown: scrolledDown
+      });
+    }
+    return scrolledDown;
   };
 
   render() {
     const { chatBox } = this.state;
 
     return (
-      <div style={{ width: "100%", height: "100%" }}>
-        <ListGroup
-          variant="flush"
+      <div
+        style={{
+          width: "100%",
+          height: "500px"
+        }}
+      >
+        <div
           style={{
+            overflowY: "scroll",
             backgroundColor: "#FFFFFF",
             height: "95%",
-            width: "80%",
-            overflow: "auto",
-            overflowY: "scroll"
+            width: "80%"
           }}
+          ref="chatroom"
         >
-          {this.state.messages.map(message => (
-            <ListGroup.Item>
-              <strong>{message.username}:</strong> {message.message}
-            </ListGroup.Item>
-          ))}
-        </ListGroup>
+          <MessageBox
+            updateScrollDownValue={this.updateScrollDownValue}
+            scrollToBottom={this.scrollToBottom}
+            scrollDown={this.state.scrollDown}
+            messages={this.state.messages}
+          />
+        </div>
         <input
           type="text"
           id="chatBox"

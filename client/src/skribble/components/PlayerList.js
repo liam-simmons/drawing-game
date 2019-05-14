@@ -33,7 +33,6 @@ class PlayerList extends React.Component {
         });
         break;
       case "playerList":
-        console.log("data", data);
         this.setState({ playerList: data.list });
         break;
       default:

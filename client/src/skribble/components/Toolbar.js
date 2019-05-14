@@ -2,7 +2,7 @@ import React from "react";
 import CircleButton from "./buttons/CircleButton";
 import ResetButton from "./buttons/ResetButton";
 import { sendResetCanvas } from "../api";
-import { truncate } from "fs";
+import { Row } from "react-bootstrap";
 
 class Toolbar extends React.Component {
   constructor() {
@@ -11,15 +11,167 @@ class Toolbar extends React.Component {
     this.state = {
       size: 0,
       colour: 0,
-      tool: 0
+      tool: 0,
+
+      buttons: {
+        sizes: [
+          {
+            id: 0,
+            radius: 2,
+            colour: "#F00",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 2
+          },
+          {
+            id: 1,
+            radius: 5,
+            colour: "#F00",
+            selected: true,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 5
+          },
+          {
+            id: 2,
+            radius: 10,
+            colour: "#F00",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 3,
+            radius: 20,
+            colour: "#F00",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 20
+          }
+        ],
+        colours: [
+          {
+            id: 0,
+            radius: 10,
+            colour: "#000",
+            selected: true,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 1,
+            radius: 10,
+            colour: "#FF0000",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 2,
+            radius: 10,
+            colour: "#00FF00",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 3,
+            radius: 10,
+            colour: "#0000FF",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 4,
+            radius: 10,
+            colour: "#FFFF00",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 5,
+            radius: 10,
+            colour: "#FF00FF",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          },
+          {
+            id: 6,
+            radius: 10,
+            colour: "#00FFFF",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
+          }
+        ],
+        tools: [{}]
+      }
     };
   }
+
+  componentDidMount = function() {
+    this.setClientSizes();
+    window.addEventListener("resize", this.setClientSizes);
+  };
+  componentWillUnmount = function() {
+    window.removeEventListener("resize", this.setClientSizes);
+  };
+
+  setClientSizes = () => {
+    const ratio = window.innerWidth / 1920;
+    this.setState(prevState => {
+      const state = { ...prevState };
+      for (let i = 0; i < state.buttons.sizes.length; i++) {
+        state.buttons.sizes[i].clientSize = state.buttons.sizes[i].size * ratio;
+        state.buttons.sizes[i].clientRadius =
+          state.buttons.sizes[i].radius * ratio;
+      }
+      for (let i = 0; i < state.buttons.colours.length; i++) {
+        state.buttons.colours[i].clientSize =
+          state.buttons.colours[i].size * ratio;
+        state.buttons.colours[i].clientRadius =
+          state.buttons.colours[i].radius * ratio;
+      }
+
+      return state;
+    });
+  };
+
   setSelectedSize(num) {
-    this.setState({ size: num });
+    this.setState(prevState => {
+      const state = { ...prevState };
+      for (let i = 0; i < state.buttons.sizes.length; i++)
+        state.buttons.sizes[i].selected = false;
+      state.buttons.sizes[num].selected = true;
+      return state;
+    });
+    //send it up the chain to go to canvas
+    this.props.setSize(this.state.buttons.sizes[num].radius);
   }
 
   setSelectedColour(num) {
     this.setState({ colour: num });
+    this.setState(prevState => {
+      const state = { ...prevState };
+      for (let i = 0; i < state.buttons.colours.length; i++)
+        state.buttons.colours[i].selected = false;
+      state.buttons.colours[num].selected = true;
+      return state;
+    });
+    this.props.setColour(this.state.buttons.colours[num].colour);
   }
 
   setSelectedTool(num) {
@@ -28,165 +180,78 @@ class Toolbar extends React.Component {
 
   render() {
     const styles = {
-      height: "100px",
-      backgroundColor: "#DDDDDD",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
+      height: "5.20833333333vw",
+      backgroundColor: "#DDDDDD"
     };
+
+    const { buttons } = this.state;
 
     return (
       <div style={styles}>
         {this.props.turn ? (
           <div>
-            <CircleButton
-              width={50}
-              height={50}
-              radius={2}
-              colour="#095068"
-              selected={this.state.size === 0}
-              setActive={() => {
-                this.setSelectedSize(0);
-                this.props.setSize(2);
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={5}
-              colour="#095068"
-              selected={this.state.size === 1}
-              setActive={() => {
-                this.setSelectedSize(1);
-                this.props.setSize(5);
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#095068"
-              selected={this.state.size === 2}
-              setActive={() => {
-                this.setSelectedSize(2);
-                this.props.setSize(10);
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={20}
-              colour="#095068"
-              selected={this.state.size === 3}
-              setActive={() => {
-                this.setSelectedSize(3);
-                this.props.setSize(20);
-              }}
-            />
+            <Row>
+              <div
+                style={{
+                  width: "12vw",
+                  height: "4vw",
+                  marginLeft: "4vw",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center"
+                }}
+              >
+                <div style={{ display: "flex" }}>
+                  {buttons.sizes.map(button => (
+                    <CircleButton
+                      key={button.id}
+                      width={button.clientSize}
+                      height={button.clientSize}
+                      radius={button.clientRadius}
+                      colour={button.colour}
+                      selected={button.selected}
+                      setActive={() => {
+                        this.setSelectedSize(button.id);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: "12vw",
+                  display: "flex",
+                  flexWrap: "wrap"
+                }}
+              >
+                {buttons.colours.map(button => (
+                  <CircleButton
+                    key={button.id}
+                    width={button.clientSize}
+                    height={button.clientSize}
+                    radius={button.clientRadius}
+                    colour={button.colour}
+                    selected={button.selected}
+                    setActive={() => {
+                      this.setSelectedColour(button.id);
+                    }}
+                  />
+                ))}
+              </div>
 
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#FF0000"
-              selected={this.state.colour === 0}
-              setActive={() => {
-                this.setSelectedColour(0);
-                this.props.setColour("#FF0000");
-              }}
-            />
-
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#00FF00"
-              selected={this.state.colour === 1}
-              setActive={() => {
-                this.setSelectedColour(1);
-                this.props.setColour("#00FF00");
-              }}
-            />
-
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#0000FF"
-              selected={this.state.colour === 2}
-              setActive={() => {
-                this.setSelectedColour(2);
-                this.props.setColour("#0000FF");
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#FFFF00"
-              selected={this.state.colour === 3}
-              setActive={() => {
-                this.setSelectedColour(3);
-                this.props.setColour("#FFFF00");
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#FF00FF"
-              selected={this.state.colour === 4}
-              setActive={() => {
-                this.setSelectedColour(4);
-                this.props.setColour("#FF00FF");
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#00FFFF"
-              selected={this.state.colour === 5}
-              setActive={() => {
-                this.setSelectedColour(5);
-                this.props.setColour("#00FFFF");
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#111111"
-              selected={this.state.colour === 6}
-              setActive={() => {
-                this.setSelectedColour(6);
-                this.props.setColour("#000000");
-              }}
-            />
-            <CircleButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#EEEEEE"
-              selected={this.state.colour === 2}
-              setActive={() => {
-                this.setSelectedColour(2);
-                this.props.setColour("#FFFFFF");
-              }}
-            />
-
-            <ResetButton
-              width={50}
-              height={50}
-              radius={10}
-              colour="#0000FF"
-              setActive={() => {
-                if (this.props.turn) {
-                  sendResetCanvas();
-                  this.props.resetCanvas();
-                }
-              }}
-            />
+              {/*<ResetButton
+                width={50}
+                height={50}
+                radius={10}
+                colour="#0000FF"
+                setActive={() => {
+                  if (this.props.turn) {
+                    sendResetCanvas();
+                    this.props.resetCanvas();
+                  }
+                }}
+              />*/}
+            </Row>
           </div>
         ) : null}
       </div>

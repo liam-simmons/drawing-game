@@ -1,11 +1,14 @@
 import React from "react";
 import {
   sendDrawInfo,
+  sendFillInfo,
   subscribeToDrawing,
+  subscribeToFilling,
   subscribeToTurns,
   subscribeToResetCanvas
 } from "./../api";
 import Toolbar from "./Toolbar";
+import { timingSafeEqual } from "crypto";
 class Canvas extends React.Component {
   constructor(props) {
     super();
@@ -17,7 +20,8 @@ class Canvas extends React.Component {
       ratio: 1,
 
       radius: 10,
-      colour: "#FF0000"
+      colour: "#FF0000",
+      tool: "brush"
     };
 
     //this.onKeyDown = this.onKeyDown.bind(this);
@@ -25,6 +29,11 @@ class Canvas extends React.Component {
     subscribeToDrawing(data => {
       const { x, y, lastX, lastY, colour, radius } = data;
       this.drawCircle(x, y, lastX, lastY, colour, radius);
+    });
+
+    subscribeToFilling(data => {
+      const { x, y, colour } = data;
+      this.fill(x, y, colour);
     });
 
     subscribeToResetCanvas(() => {
@@ -67,9 +76,13 @@ class Canvas extends React.Component {
   onMouseDown = e => {
     e.preventDefault();
     if (this.state.turn && !this.state.actionLoop) {
-      this.setState({
-        actionLoop: setInterval(this.paint, 16)
-      });
+      if (this.state.tool === "brush") {
+        this.setState({
+          actionLoop: setInterval(this.paint, 16)
+        });
+      } else if (this.state.tool === "bucket") {
+        this.clientFill();
+      }
     }
   };
 
@@ -80,8 +93,9 @@ class Canvas extends React.Component {
 
   onMouseMove = e => {
     this.setState({
-      x: e.nativeEvent.offsetX / this.state.ratio,
-      y: e.nativeEvent.offsetY / this.state.ratio
+      //round rather than floor maybe?
+      x: Math.floor(e.nativeEvent.offsetX / this.state.ratio),
+      y: Math.floor(e.nativeEvent.offsetY / this.state.ratio)
     });
   };
 
@@ -121,6 +135,119 @@ class Canvas extends React.Component {
     }
   };
 
+  clientFill = () => {
+    const { x, y } = this.state;
+    //const fillColour = this.state.colour;
+    const fillColour = [0, 0, 0, 255];
+    sendFillInfo(x, y, fillColour);
+    this.fill(x, y, fillColour);
+  };
+
+  fill = (x, y, fillColour) => {
+    const ctx = this.refs.canvas.getContext("2d");
+
+    //const targetColour = ctx.getImageData(x, y, 1, 1).data;
+    const targetColour = [255, 255, 255, 255];
+
+    let canvasData = ctx.getImageData(
+      0,
+      0,
+      this.state.width,
+      this.state.height
+    );
+    const pixelsToCheck = [{ x, y }];
+    const pixelsChecked = [];
+    pixelsChecked[x + this.state.width * y] = true;
+
+    //let temp = 0;
+    while (pixelsToCheck.length > 0) {
+      //temp++;
+      const dogman = pixelsToCheck.length;
+      for (let i = 0; i < dogman; i++) {
+        //console.log("pixelsToCheck", [...pixelsToCheck]);
+
+        if (
+          this.checkPixelColour(
+            targetColour,
+            pixelsToCheck[0].x,
+            pixelsToCheck[0].y,
+            canvasData.data
+          )
+        ) {
+          this.setPixelColour(
+            canvasData.data,
+            pixelsToCheck[0].x,
+            pixelsToCheck[0].y,
+            fillColour
+          );
+          this.addSurroundingPixels(pixelsToCheck, pixelsChecked);
+        }
+        pixelsToCheck.splice(0, 1);
+      }
+
+      //if (temp > 1000) break;
+    }
+    console.log("canvasData", canvasData);
+    ctx.putImageData(canvasData, 0, 0);
+  };
+
+  setPixelColour(canvasData, x, y, colour) {
+    const id = 4 * (x + y * this.state.width);
+    //if (id < 0 || id + 2 >= canvasData.length) return false;
+    canvasData[id] = colour[0];
+    canvasData[id + 1] = colour[1];
+    canvasData[id + 2] = colour[2];
+  }
+
+  checkPixelColour = (targetColour, x, y, canvasData) => {
+    //returns true if colours are the same
+    const id = 4 * (x + y * this.state.width);
+    //if (id < 0 || id + 2 >= canvasData.length) return false;
+    return (
+      canvasData[id] === targetColour[0] &&
+      canvasData[id + 1] === targetColour[1] &&
+      canvasData[id + 2] === targetColour[2]
+    );
+  };
+
+  addSurroundingPixels = (pixelsToCheck, pixelsChecked) => {
+    const x = pixelsToCheck[0].x,
+      y = pixelsToCheck[0].y;
+
+    if (!pixelsChecked[x + 1 + y * this.state.width] && x < this.state.width) {
+      pixelsToCheck.push({
+        x: x + 1,
+        y: y
+      });
+      pixelsChecked[x + 1 + y * this.state.width] = true;
+    }
+    if (
+      !pixelsChecked[x + (y + 1) * this.state.width] &&
+      y < this.state.height
+    ) {
+      pixelsToCheck.push({
+        x: x,
+        y: y + 1
+      });
+      pixelsChecked[x + (y + 1) * this.state.width] = true;
+    }
+    if (!pixelsChecked[x - 1 + y * this.state.width] && x !== 0) {
+      pixelsToCheck.push({
+        x: x - 1,
+        y: y
+      });
+      pixelsChecked[x - 1 + y * this.state.width] = true;
+    }
+    if (!pixelsChecked[x + (y - 1) * this.state.width] && y !== 0) {
+      pixelsToCheck.push({
+        x: x,
+        y: y - 1
+      });
+      pixelsChecked[x + (y - 1) * this.state.width] = true;
+    }
+    //return canvasData;
+  };
+
   setColour = colour => {
     this.setState({ colour });
   };
@@ -129,8 +256,14 @@ class Canvas extends React.Component {
     this.setState({ radius });
   };
 
-  onClick = e => {}; //idk why its needed?
+  setTool = tool => {
+    console.log("RECEIVED TOOL CHANGE REQUESTS");
+    this.setState({ tool });
+  };
 
+  //onClick = e => {}; //idk why its needed?
+
+  //i dont know what this is for:
   handleBarChange = e => {
     //seems quite messy to me :/
     let hex = parseInt(e.target.value).toString(16);
@@ -158,7 +291,7 @@ class Canvas extends React.Component {
         <div className="float-none">
           <canvas
             ref="canvas"
-            onClick={e => this.onClick(e)}
+            //onClick={e => this.onClick(e)}
             onMouseMove={this.onMouseMove}
             width={width}
             height={height}
@@ -170,6 +303,7 @@ class Canvas extends React.Component {
           <Toolbar
             setSize={this.setSize}
             setColour={this.setColour}
+            setTool={this.setTool}
             resetCanvas={this.resetCanvas}
             turn={this.state.turn}
           />

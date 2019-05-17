@@ -72,6 +72,11 @@ io.on("connection", socket => {
         socket.broadcast.emit("drawInfo", data);
     });
 
+    socket.on("fillInfo", data => {
+      if (id === PLAYER_LIST[turnId].id)
+        socket.broadcast.emit("fillInfo", data);
+    });
+
     socket.on("reset-canvas", data => {
       if (id === PLAYER_LIST[turnId].id)
         socket.broadcast.emit("reset-canvas", data);

@@ -117,7 +117,28 @@ class Toolbar extends React.Component {
             clientRadius: 10
           }
         ],
-        tools: [{}]
+        tools: [
+          {
+            id: 0,
+            radius: 10,
+            colour: "#888",
+            selected: true,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10,
+            name: "brush"
+          },
+          {
+            id: 1,
+            radius: 10,
+            colour: "#888",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10,
+            name: "bucket"
+          }
+        ]
       }
     };
   }
@@ -175,7 +196,16 @@ class Toolbar extends React.Component {
   }
 
   setSelectedTool(num) {
+    console.log("setting");
     this.setState({ tool: num });
+    this.setState(prevState => {
+      const state = { ...prevState };
+      for (let i = 0; i < state.buttons.tools.length; i++)
+        state.buttons.tools[i].selected = false;
+      state.buttons.tools[num].selected = true;
+      return state;
+    });
+    this.props.setTool(this.state.buttons.tools[num].name);
   }
 
   render() {
@@ -234,6 +264,28 @@ class Toolbar extends React.Component {
                     selected={button.selected}
                     setActive={() => {
                       this.setSelectedColour(button.id);
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div
+                style={{
+                  width: "12vw",
+                  display: "flex",
+                  flexWrap: "wrap"
+                }}
+              >
+                {buttons.tools.map(button => (
+                  <CircleButton
+                    key={button.id}
+                    width={button.clientSize}
+                    height={button.clientSize}
+                    radius={button.clientRadius}
+                    colour={button.colour}
+                    selected={button.selected}
+                    setActive={() => {
+                      this.setSelectedTool(button.id);
                     }}
                   />
                 ))}

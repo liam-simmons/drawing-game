@@ -2,8 +2,14 @@ import io from "socket.io-client";
 //const socket = openSocket("http://localhost:3231");
 const socket = io();
 
-function subscribeToDrawing(callback) {
+export function subscribeToDrawing(callback) {
   socket.on("drawInfo", data => {
+    callback(data);
+  });
+}
+
+export function subscribeToFilling(callback) {
+  socket.on("fillInfo", data => {
     callback(data);
   });
 }
@@ -20,7 +26,7 @@ export const subscribeToTurns = callback => {
   });
 };
 
-function subscribeToChat(callback) {
+export function subscribeToChat(callback) {
   console.log("subbing");
   socket.on("chatMessage", data => {
     console.log("new chat");
@@ -53,20 +59,20 @@ export const subscribeToPlayerList = callback => {
   });
 };
 
-function sendDrawInfo(x, y, lastX, lastY, colour, radius) {
+export function sendDrawInfo(x, y, lastX, lastY, colour, radius) {
   socket.emit("drawInfo", { x, y, lastX, lastY, colour, radius });
 }
-
+export function sendFillInfo(x, y, colour) {
+  socket.emit("fillInfo", { x, y, colour });
+}
 export const sendResetCanvas = () => {
   socket.emit("reset-canvas");
 };
 
-function sendChatMessage(username, message) {
+export function sendChatMessage(username, message) {
   socket.emit("chatMessage", { username, message });
 }
 
 export const sendName = name => {
   socket.emit("name", name);
 };
-
-export { sendDrawInfo, subscribeToDrawing, subscribeToChat, sendChatMessage };

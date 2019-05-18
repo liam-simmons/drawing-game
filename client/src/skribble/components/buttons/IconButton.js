@@ -24,19 +24,13 @@ class CircleButton extends React.Component {
   };
 
   render() {
-    const {
-      width,
-      height,
-      colour,
-      radius,
-      selectColour,
-      selected
-    } = this.props;
+    const { width, height, image, selected, imageSize } = this.props;
     const { hovered } = this.state;
 
     return (
-      <div width={width} height={height} style={{ fontSize: 0 }}>
+      <div width={width} height={height}>
         <svg
+          viewBox={`0 0 ${width} ${height}`}
           width={width}
           height={height}
           onClick={this.onClick}
@@ -45,16 +39,13 @@ class CircleButton extends React.Component {
         >
           {hovered && <rect width={width} height={height} fill="#FFFFFF" />}
 
-          {selected ? (
-            <circle
-              cx={width / 2}
-              cy={height / 2}
-              r={radius}
-              fill={selectColour}
-            />
-          ) : (
-            <circle cx={width / 2} cy={height / 2} r={radius} fill={colour} />
-          )}
+          <image
+            x={(width - imageSize) / 2}
+            y={(height - imageSize) / 2}
+            width={imageSize}
+            height={imageSize}
+            href={image}
+          />
         </svg>
       </div>
     );

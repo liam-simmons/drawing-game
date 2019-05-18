@@ -15,7 +15,6 @@ class CircleButton extends React.Component {
     e.preventDefault();
     this.props.setActive();
     this.setState({ selected: true });
-    console.log("cicks");
   };
 
   onMouseEnter = () => {

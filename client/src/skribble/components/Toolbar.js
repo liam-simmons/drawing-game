@@ -1,8 +1,12 @@
 import React from "react";
 import CircleButton from "./buttons/CircleButton";
-import ResetButton from "./buttons/ResetButton";
+import IconButton from "./buttons/IconButton";
 import { sendResetCanvas } from "../api";
 import { Row } from "react-bootstrap";
+
+import ResetImage from "../images/trash-solid.svg";
+import BucketImage from "../images/fill-drip-solid.svg";
+import BrushImage from "../images/paint-brush-solid.svg";
 
 class Toolbar extends React.Component {
   constructor() {
@@ -115,27 +119,33 @@ class Toolbar extends React.Component {
             size: 50,
             clientSize: 50,
             clientRadius: 10
+          },
+          {
+            id: 7,
+            radius: 10,
+            colour: "#FFFFFF",
+            toolbarColour: "#EEEEEE",
+            selected: false,
+            size: 50,
+            clientSize: 50,
+            clientRadius: 10
           }
         ],
         tools: [
           {
             id: 0,
-            radius: 10,
-            colour: "#888",
             selected: true,
             size: 50,
-            clientSize: 50,
-            clientRadius: 10,
+            image: BrushImage,
+            imageSize: 20,
             name: "brush"
           },
           {
             id: 1,
-            radius: 10,
-            colour: "#888",
             selected: false,
             size: 50,
-            clientSize: 50,
-            clientRadius: 10,
+            image: BucketImage,
+            imageSize: 20,
             name: "bucket"
           }
         ]
@@ -260,7 +270,7 @@ class Toolbar extends React.Component {
                     width={button.clientSize}
                     height={button.clientSize}
                     radius={button.clientRadius}
-                    colour={button.colour}
+                    colour={button.toolbarColour || button.colour}
                     selected={button.selected}
                     setActive={() => {
                       this.setSelectedColour(button.id);
@@ -271,18 +281,18 @@ class Toolbar extends React.Component {
 
               <div
                 style={{
-                  width: "12vw",
+                  width: "6vw",
                   display: "flex",
                   flexWrap: "wrap"
                 }}
               >
                 {buttons.tools.map(button => (
-                  <CircleButton
+                  <IconButton
                     key={button.id}
-                    width={button.clientSize}
-                    height={button.clientSize}
-                    radius={button.clientRadius}
-                    colour={button.colour}
+                    width={button.size}
+                    height={button.size}
+                    image={button.image}
+                    imageSize={button.imageSize}
                     selected={button.selected}
                     setActive={() => {
                       this.setSelectedTool(button.id);
@@ -290,19 +300,26 @@ class Toolbar extends React.Component {
                   />
                 ))}
               </div>
-
-              {/*<ResetButton
-                width={50}
-                height={50}
-                radius={10}
-                colour="#0000FF"
-                setActive={() => {
-                  if (this.props.turn) {
-                    sendResetCanvas();
-                    this.props.resetCanvas();
-                  }
+              <div
+                style={{
+                  width: "2vw",
+                  display: "flex",
+                  flexWrap: "wrap"
                 }}
-              />*/}
+              >
+                <IconButton
+                  width={50}
+                  height={50}
+                  imageSize={20}
+                  image={ResetImage}
+                  setActive={() => {
+                    if (this.props.turn) {
+                      sendResetCanvas();
+                      this.props.resetCanvas();
+                    }
+                  }}
+                />
+              </div>
             </Row>
           </div>
         ) : null}

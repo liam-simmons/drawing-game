@@ -24,7 +24,7 @@ class App extends Component {
           path="/skribble"
           exact
           render={routeProps => (
-            <Skribble {...routeProps} width={1280} height={720} />
+            <Skribble {...routeProps} width={640} height={360} />
           )}
         />
       </div>

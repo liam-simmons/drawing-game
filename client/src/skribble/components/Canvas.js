@@ -257,7 +257,6 @@ class Canvas extends React.Component {
   };
 
   setTool = tool => {
-    console.log("RECEIVED TOOL CHANGE REQUESTS");
     this.setState({ tool });
   };
 

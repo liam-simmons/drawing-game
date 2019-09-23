@@ -29,7 +29,7 @@ class Join extends React.Component {
           type="text"
           id="name"
           name="name"
-          placeholder="Comment tu t'appelles?"
+          placeholder="Pick a name!"
           value={this.state.name}
           onChange={this.onChange}
         />

@@ -8,7 +8,10 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <Navbar bg="dark" expand="lg">
+        <Navbar
+          expand="lg"
+          style={{ backgroundColor: "#212838", color: "#ffffff" }}
+        >
           <Navbar.Brand href="#home">Skribble Clone</Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">

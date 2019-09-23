@@ -7,7 +7,7 @@ import Word from "./components/Word";
 import Join from "./components/Join";
 import { sendName } from "./api";
 
-document.body.style = "background: #111111;";
+document.body.style = "background: #152234;";
 
 class Skribble extends React.Component {
   constructor() {

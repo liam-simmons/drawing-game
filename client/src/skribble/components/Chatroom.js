@@ -20,7 +20,6 @@ class Chatroom extends React.Component {
 
   componentDidUpdate() {
     const test = this.updateScrollDownValue();
-    console.log("test", test);
     if (test) this.scrollToBottom();
   }
 
@@ -30,13 +29,17 @@ class Chatroom extends React.Component {
         this.setState(prevState => {
           const messages = [
             ...prevState.messages,
-            { username: data.username, message: data.message, id: data.id }
+            {
+              username: data.username + ":",
+              message: data.message,
+              id: data.id
+            }
           ];
           return { ...prevState, messages };
         });
         break;
       }
-      /*case "leaverMessage": {
+      case "leaverMessage": {
         this.setState(prevState => {
           const messages = [
             ...prevState.messages,
@@ -55,7 +58,7 @@ class Chatroom extends React.Component {
           return { ...prevState, messages };
         });
         break;
-      }*/
+      }
       default:
         break;
     }
@@ -108,7 +111,7 @@ class Chatroom extends React.Component {
       <div
         style={{
           width: "100%",
-          height: "500px"
+          height: "38vw"
         }}
       >
         <div

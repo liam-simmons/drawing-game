@@ -7,7 +7,7 @@ class MessageBox extends React.Component {
       <ListGroup variant="flush">
         {this.props.messages.map(message => (
           <ListGroup.Item key={message.id}>
-            <strong>{message.username}:</strong> {message.message}
+            <strong>{message.username}</strong> {message.message}
           </ListGroup.Item>
         ))}
       </ListGroup>

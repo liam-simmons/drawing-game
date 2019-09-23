@@ -1,7 +1,7 @@
 import React from "react";
 import CircleButton from "./buttons/CircleButton";
 import IconButton from "./buttons/IconButton";
-import { sendResetCanvas } from "../api";
+import { sendResetCanvas, sendUndo, sendRedo } from "../api";
 import { Row } from "react-bootstrap";
 
 import ResetImage from "../images/trash-solid.svg";
@@ -61,6 +61,7 @@ class Toolbar extends React.Component {
             id: 0,
             radius: 10,
             colour: "#000",
+            colourRGB: [0, 0, 0],
             selected: true,
             size: 50,
             clientSize: 50,
@@ -70,6 +71,7 @@ class Toolbar extends React.Component {
             id: 1,
             radius: 10,
             colour: "#FF0000",
+            colourRGB: [255, 0, 0],
             selected: false,
             size: 50,
             clientSize: 50,
@@ -79,6 +81,7 @@ class Toolbar extends React.Component {
             id: 2,
             radius: 10,
             colour: "#00FF00",
+            colourRGB: [0, 255, 0],
             selected: false,
             size: 50,
             clientSize: 50,
@@ -88,6 +91,7 @@ class Toolbar extends React.Component {
             id: 3,
             radius: 10,
             colour: "#0000FF",
+            colourRGB: [0, 0, 255],
             selected: false,
             size: 50,
             clientSize: 50,
@@ -97,6 +101,7 @@ class Toolbar extends React.Component {
             id: 4,
             radius: 10,
             colour: "#FFFF00",
+            colourRGB: [0, 255, 255],
             selected: false,
             size: 50,
             clientSize: 50,
@@ -106,6 +111,7 @@ class Toolbar extends React.Component {
             id: 5,
             radius: 10,
             colour: "#FF00FF",
+            colourRGB: [255, 0, 255],
             selected: false,
             size: 50,
             clientSize: 50,
@@ -115,6 +121,7 @@ class Toolbar extends React.Component {
             id: 6,
             radius: 10,
             colour: "#00FFFF",
+            colourRGB: [0, 255, 255],
             selected: false,
             size: 50,
             clientSize: 50,
@@ -124,6 +131,7 @@ class Toolbar extends React.Component {
             id: 7,
             radius: 10,
             colour: "#FFFFFF",
+            colourRGB: [255, 255, 255],
             toolbarColour: "#EEEEEE",
             selected: false,
             size: 50,
@@ -202,7 +210,7 @@ class Toolbar extends React.Component {
       state.buttons.colours[num].selected = true;
       return state;
     });
-    this.props.setColour(this.state.buttons.colours[num].colour);
+    this.props.setColour(this.state.buttons.colours[num].colourRGB);
   }
 
   setSelectedTool(num) {
@@ -316,6 +324,32 @@ class Toolbar extends React.Component {
                     if (this.props.turn) {
                       sendResetCanvas();
                       this.props.resetCanvas();
+                    }
+                  }}
+                />
+
+                <IconButton
+                  width={50}
+                  height={50}
+                  imageSize={20}
+                  image={ResetImage}
+                  setActive={() => {
+                    if (this.props.turn) {
+                      sendUndo();
+                      this.props.undo();
+                    }
+                  }}
+                />
+
+                <IconButton
+                  width={50}
+                  height={50}
+                  imageSize={20}
+                  image={ResetImage}
+                  setActive={() => {
+                    if (this.props.turn) {
+                      sendRedo();
+                      this.props.redo();
                     }
                   }}
                 />

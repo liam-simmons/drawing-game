@@ -2,6 +2,12 @@ import io from "socket.io-client";
 //const socket = openSocket("http://localhost:3231");
 const socket = io();
 
+export function subscribeToMyId(callback) {
+  socket.on("yourId", id => {
+    callback(id);
+  });
+}
+
 export function subscribeToDrawing(callback) {
   socket.on("drawInfo", data => {
     callback(data);
@@ -68,8 +74,15 @@ export function sendFillInfo(x, y, colour) {
 export const sendResetCanvas = () => {
   socket.emit("reset-canvas");
 };
+export const sendUndo = () => {
+  socket.emit("undo");
+};
+export const sendRedo = () => {
+  socket.emit("redo");
+};
 
 export function sendChatMessage(username, message) {
+  console.log("sending from api");
   socket.emit("chatMessage", { username, message });
 }
 

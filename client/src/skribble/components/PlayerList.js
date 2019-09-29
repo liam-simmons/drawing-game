@@ -17,11 +17,20 @@ class PlayerList extends React.Component {
 
     subscribeToTurns(data => {
       this.setState({ turnId: data.turn });
-    });
+    }); //do i need this??? can't i just add this to the player list functions
   }
 
   handleData = data => {
     switch (data.type) {
+      case "newTurn":
+        console.log("RESETTING");
+        this.setState(prevState => {
+          const state = { ...prevState };
+          for (let i = 0; i < state.playerList.length; i++)
+            state.playerList[i].hasGuessed = false;
+          return state;
+        });
+        break;
       case "playerJoin":
         this.setState(prevState => ({
           ...prevState,
@@ -40,17 +49,29 @@ class PlayerList extends React.Component {
       case "playerList":
         this.setState({ playerList: data.list });
         break;
+      case "playerGuessed":
+        this.setState(prevState => {
+          const state = { ...prevState };
+          state.playerList[data.playerId].hasGuessed = true;
+          return state;
+        });
+        break;
       default:
         break;
     }
   };
 
   render() {
-    console.log(this.state.playerList);
     return (
       <ListGroup variant="flush" style={{ float: "right", width: "80%" }}>
         {this.state.playerList.map((player, i) => (
-          <ListGroup.Item>
+          <ListGroup.Item
+            style={
+              this.state.playerList[i].hasGuessed
+                ? { backgroundColor: "#00FF00" }
+                : { backgroundColor: "#FFFFFF" }
+            }
+          >
             <strong>{player.username}</strong> (ID: {player.id}){" - "}
             <strong>
               {this.state.playerList[i].id === this.state.turnId &&

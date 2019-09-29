@@ -53,7 +53,15 @@ class Canvas extends React.Component {
     });
 
     subscribeToTurns(data => {
-      this.setState({ turn: data.turn === this.state.myId });
+      this.setState(prevState => {
+        const state = { ...prevState };
+        if (data.turn === state.myId) state.turn = true;
+        else {
+          state.turn = false;
+          clearInterval(state.actionLoop);
+        }
+        return state;
+      });
     });
   }
 

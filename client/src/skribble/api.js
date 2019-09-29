@@ -27,15 +27,13 @@ export const subscribeToResetCanvas = callback => {
 };
 
 export const subscribeToTurns = callback => {
-  socket.on("turnChange", data => {
+  socket.on("turn-change", data => {
     callback(data);
   });
 };
 
 export function subscribeToChat(callback) {
-  console.log("subbing");
-  socket.on("chatMessage", data => {
-    console.log("new chat");
+  socket.on("chat-message", data => {
     callback({ ...data, type: "message" });
   });
   socket.on("user-connected", data => {
@@ -44,10 +42,19 @@ export function subscribeToChat(callback) {
   socket.on("user-disconnected", data => {
     callback({ username: data.username, type: "leaverMessage" });
   });
+  socket.on("player-guessed-word", data => {
+    callback({ ...data, type: "guessedMessage" });
+  });
+  socket.on("everyone-guessed-correctly", data => {
+    callback({ ...data, type: "everyoneGuessedMessage" });
+  });
+  socket.on("timer-ran-out", data => {
+    callback({ ...data, type: "timerRanOutMessage" });
+  });
 }
 
 export const subscribeToWords = callback => {
-  socket.on("wordUpdate", word => callback(word));
+  socket.on("word-update", word => callback(word));
 };
 
 export const subscribeToPlayerList = callback => {
@@ -62,6 +69,20 @@ export const subscribeToPlayerList = callback => {
   });
   socket.on("user-disconnected", data => {
     callback({ username: data.username, id: data.id, type: "playerLeave" });
+  });
+
+  socket.on("player-guessed-word", data => {
+    callback({ ...data, type: "playerGuessed" });
+  });
+
+  socket.on("turn-change", data => {
+    callback({ ...data, type: "newTurn" });
+  });
+};
+
+export const subscribeToTimer = callback => {
+  socket.on("set-timer", data => {
+    callback(data);
   });
 };
 
@@ -82,8 +103,7 @@ export const sendRedo = () => {
 };
 
 export function sendChatMessage(username, message) {
-  console.log("sending from api");
-  socket.emit("chatMessage", { username, message });
+  socket.emit("chat-message", { username, message });
 }
 
 export const sendName = name => {

@@ -5,6 +5,7 @@ import Canvas from "./components/Canvas";
 import PlayerList from "./components/PlayerList";
 import Word from "./components/Word";
 import Join from "./components/Join";
+import Timer from "./components/Timer";
 import { sendName } from "./api";
 
 document.body.style = "background: #152234;";
@@ -28,7 +29,14 @@ class Skribble extends React.Component {
       <div className="App">
         {this.state.name ? (
           <div>
-            <Word />
+            <Row>
+              <Col xs={2}>
+                <Timer />
+              </Col>
+              <Col xs={7}>
+                <Word />
+              </Col>
+            </Row>
             <Row>
               <Col xs={2}>
                 <PlayerList />

@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const app = express();
 var server = require("http").createServer(app);
 const socketIO = require("socket.io");
@@ -9,11 +10,11 @@ const PORT = process.env.PORT || 5000;
 //
 const io = socketIO(server);
 
-// Choose the port and start the server
+// choose the port and start the server
 server.listen(PORT, () => console.log(`Listening on ${PORT}`));
-// Serve static files from the React frontend app
+// serve static files from the React frontend app
 app.use(express.static(path.join(__dirname, "client/build")));
-// Anything that doesn't match the above, send back index.html
+// anything that doesn't match the above, send back index.html
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname + "/client/build/index.html"));
 });
@@ -27,35 +28,45 @@ let nextId = 0;
 
 let messageId = 0;
 
-const WORD_LIST = [
-  "dog",
-  "cat",
-  "chicken",
-  "marplot",
-  "mouse",
-  "song",
-  "keyboard",
-  "hug",
-  "dress",
-  "books",
-  "texas",
-  "poirot",
-  "tiger",
-  "lion",
-  "owl",
-  "penguin",
-  "word",
-  "wordgirl"
-];
-let word = "dog";
-let publicWord = "___";
+const timerLength = 40;
+
+let turnTimer = 0;
+let turnTimerInterval;
+
+//setting up word list
+const WORD_LIST = [];
+fs.readFile("words.txt", (err, data) => {
+  if (err) throw err;
+
+  console.log(data.toString());
+  const text = data.toString();
+
+  let currentWord = "";
+
+  for (i = 0; i < text.length; i++) {
+    if (text[i] === "\n") {
+      for (let j = 0; j < currentWord.length; j++) {
+        console.log(j, currentWord[j]);
+      }
+      WORD_LIST.push(currentWord);
+      currentWord = "";
+    } else if (text[i] !== "\r") {
+      currentWord = currentWord + text[i];
+      //console.log("cuerrentword", currentWord);
+    }
+  }
+});
+
+let word = "";
+let publicWord = "";
 let loopFunction = null;
 let turnTimeout = null;
 
 let turnId = null;
 
 io.on("connection", socket => {
-  let username = "no name";
+  let username = "Unknown";
+  socket.hasGuessedWord = false;
   const id = nextId;
 
   nextId++;
@@ -70,13 +81,13 @@ io.on("connection", socket => {
     console.log("emit their id");
     socket.emit("yourId", id);
     if (turnTimeout && PLAYER_LIST[turnId]) {
-      socket.emit("turnChange", { turn: PLAYER_LIST[turnId].id });
-      socket.emit("wordUpdate", publicWord);
+      socket.emit("turn-change", { turn: PLAYER_LIST[turnId].id });
+      socket.emit("word-update", publicWord);
     }
     console.log("add socket list");
     SOCKET_LIST[id] = socket;
     console.log("push id to player list");
-    PLAYER_LIST.push({ id, username });
+    PLAYER_LIST.push({ id, username, guessedCorrectly: false });
 
     console.log("SOCKET_LIST.length", SOCKET_LIST.length);
     console.log("drawinfo making");
@@ -99,18 +110,31 @@ io.on("connection", socket => {
     });
 
     console.log("chat making");
-    socket.on("chatMessage", data => {
+    socket.on("chat-message", data => {
       console.log("received message:", data);
-      io.emit("chatMessage", {
-        message: data.message,
-        username,
-        id: messageId
-      });
-      messageId++;
-      if (data.message == word) {
-        if (id !== PLAYER_LIST[turnId].id) {
-          newTurn();
-        }
+      console.log(word.length, data.message.length);
+      if (socket.hasGuessedWord) {
+        SOCKET_LIST.forEach(function(socket) {
+          if (socket && socket.hasGuessedWord) {
+            socket.emit("chat-message", {
+              message: data.message,
+              username,
+              id: messageId
+            });
+            messageId++;
+          }
+        });
+      } else if (data.message.toLowerCase() == word.toLowerCase()) {
+        playerGuessedWord(id, username);
+        console.log("YES GUESSED");
+        //newTurn();
+      } else {
+        io.emit("chat-message", {
+          message: data.message,
+          username,
+          id: messageId
+        });
+        messageId++;
       }
     });
 
@@ -136,12 +160,14 @@ io.on("connection", socket => {
       SOCKET_LIST[id] = null; //wish there were a better way
       PLAYER_LIST = PLAYER_LIST.filter(i => i.id !== id);
 
+      checkAllGuessed();
+
       if (PLAYER_LIST.length === 1) {
         loopFunction && clearInterval(loopFunction);
         turnTimeout && clearTimeout(turnTimeout);
 
-        io.emit("turnChange", { turn: -1 });
-        io.emit("wordUpdate", "Waiting for players...");
+        io.emit("turn-change", { turn: -1 });
+        io.emit("word-update", "Waiting for players...");
         io.emit("reset-canvas");
       }
     });
@@ -152,22 +178,31 @@ io.on("connection", socket => {
 });
 
 const gameStart = () => {
-  console.log("game starting");
   turnId = 0;
-  newWord();
-  //SOCKET_LIST[PLAYER_LIST[turnId].id].emit("turnChange", { turn: true });
-
-  io.emit("turnChange", { turn: PLAYER_LIST[turnId].id });
+  setupRound();
 };
 
 const newTurn = () => {
-  console.log("new tunr");
-  /*PLAYER_LIST[turnId] &&
-    SOCKET_LIST[PLAYER_LIST[turnId].id].emit("turnChange", { turn: false });*/
   turnId = (turnId + 1) % PLAYER_LIST.length;
+  setupRound();
+};
+
+const setupRound = () => {
+  io.emit("set-timer", { time: timerLength }); // change later
+  turnTimer = timerLength;
+  turnTimerInterval = setInterval(() => {
+    turnTimer--;
+    if (turnTimer <= 0) {
+      clearInterval(turnTimerInterval);
+      io.emit("timer-ran-out", { id: messageId, word });
+      messageId++;
+      newTurn();
+    }
+  }, 1000);
+
   newWord();
-  //SOCKET_LIST[PLAYER_LIST[turnId].id].emit("turnChange", { turn: true });
-  io.emit("turnChange", { turn: PLAYER_LIST[turnId].id });
+  if (PLAYER_LIST[turnId])
+    io.emit("turn-change", { turn: PLAYER_LIST[turnId].id });
   io.emit("reset-canvas");
 };
 
@@ -175,13 +210,12 @@ const newWord = () => {
   console.log("new word");
   let sock; //sort this out
 
-  PLAYER_LIST[turnId]
-    ? (sock = SOCKET_LIST[PLAYER_LIST[turnId].id])
-    : (sock = 5);
+  PLAYER_LIST[turnId] && (sock = SOCKET_LIST[PLAYER_LIST[turnId].id]);
+  /*  : (sock = 5); //???
 
   if (sock === 5) {
     return;
-  }
+  }*/
 
   const wordId = Math.floor(Math.random() * WORD_LIST.length);
   word = WORD_LIST[wordId];
@@ -193,15 +227,28 @@ const newWord = () => {
 
   console.log("the word is ", word);
 
-  sock && sock.broadcast.emit("wordUpdate", publicWord);
-  sock && sock.emit("wordUpdate", word);
+  sock && sock.broadcast.emit("word-update", publicWord);
+  sock && sock.emit("word-update", word);
+
+  for (let i = 0; i < PLAYER_LIST.length; i++) {
+    PLAYER_LIST[i].guessedCorrectly = false;
+    SOCKET_LIST[PLAYER_LIST[i].id].hasGuessedWord = false; //<-------------
+  }
+  if (PLAYER_LIST[turnId]) {
+    PLAYER_LIST[turnId].guessedCorrectly = true;
+    SOCKET_LIST[PLAYER_LIST[turnId].id].hasGuessedWord = true;
+  }
+  //console.log("EMITIGNG");
+  //if (PLAYER_LIST[turnId].id === id) guessedCorrectly = true;
 };
 
 const setPublicWord = () => {
   console.log("setting public word");
   publicWord = "";
   for (let i = 0; i < word.length; i++) {
-    publicWord = publicWord.concat("_");
+    if (word[i] === " ") publicWord = publicWord.concat(" ");
+    else if (word[i] === "-") publicWord = publicWord.concat("-");
+    else publicWord = publicWord.concat("_");
   }
 };
 
@@ -209,10 +256,52 @@ const revealLetter = sock => {
   console.log("revealing letter");
   let index = Math.floor(Math.random() * word.length);
   publicWord = replaceAt(publicWord, index, word[index]);
-  sock && sock.broadcast.emit("wordUpdate", publicWord);
+  sock && sock.broadcast.emit("word-update", publicWord);
   console.log("revealing");
 
   //maybe make it so that it cant do the same letter? doesnt really matter though
+};
+
+const playerGuessedWord = (id, username) => {
+  console.log("guessed correclty");
+  /*PLAYER_LIST[thisPlayer].guessedCorrectly = true;
+  id === PLAYER_LIST[turnId].id;*/
+
+  for (let i = 0; i < PLAYER_LIST.length; i++) {
+    if (id === PLAYER_LIST[i].id) {
+      PLAYER_LIST[i].guessedCorrectly = true;
+      SOCKET_LIST[PLAYER_LIST[i].id].hasGuessedWord = true;
+
+      io.emit("player-guessed-word", {
+        username,
+        playerId: i,
+        id: messageId
+      });
+      messageId++;
+
+      break;
+    }
+  }
+  checkAllGuessed();
+};
+
+checkAllGuessed = () => {
+  let allGuessedCorrectly = true;
+
+  for (let i = 0; i < PLAYER_LIST.length; i++) {
+    if (!PLAYER_LIST[i].guessedCorrectly) allGuessedCorrectly = false;
+    console.log("allGuessedCorrectly (in loop)", allGuessedCorrectly);
+  }
+  console.log("allGuessedCorrectly", allGuessedCorrectly);
+  if (allGuessedCorrectly) {
+    io.emit("everyone-guessed-correctly", {
+      word,
+      id: messageId
+    });
+    messageId++;
+
+    newTurn();
+  }
 };
 
 //next is make a game engine in api c:

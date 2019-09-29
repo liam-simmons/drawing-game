@@ -7,6 +7,8 @@ import { Row } from "react-bootstrap";
 import ResetImage from "../images/trash-solid.svg";
 import BucketImage from "../images/fill-drip-solid.svg";
 import BrushImage from "../images/paint-brush-solid.svg";
+import UndoImage from "../images/undo-solid.svg";
+import RedoImage from "../images/redo-solid.svg";
 
 class Toolbar extends React.Component {
   constructor() {
@@ -146,6 +148,8 @@ class Toolbar extends React.Component {
             size: 50,
             image: BrushImage,
             imageSize: 20,
+            clientSize: 50,
+            clientImageSize: 20,
             name: "brush"
           },
           {
@@ -154,7 +158,53 @@ class Toolbar extends React.Component {
             size: 50,
             image: BucketImage,
             imageSize: 20,
+            clientSize: 50,
+            clientImageSize: 20,
             name: "bucket"
+          }
+        ],
+        specials: [
+          {
+            id: 0,
+            size: 50,
+            imageSize: 20,
+            clientSize: 50,
+            clientImageSize: 20,
+            image: ResetImage,
+            function: () => {
+              if (this.props.turn) {
+                sendResetCanvas();
+                this.props.resetCanvas();
+              }
+            }
+          },
+          {
+            id: 1,
+            size: 50,
+            imageSize: 20,
+            clientSize: 50,
+            clientImageSize: 20,
+            image: UndoImage,
+            function: () => {
+              if (this.props.turn) {
+                sendUndo();
+                this.props.undo();
+              }
+            }
+          },
+          {
+            id: 2,
+            size: 50,
+            imageSize: 20,
+            clientSize: 50,
+            clientImageSize: 20,
+            image: RedoImage,
+            function: () => {
+              if (this.props.turn) {
+                sendRedo();
+                this.props.redo();
+              }
+            }
           }
         ]
       }
@@ -183,6 +233,19 @@ class Toolbar extends React.Component {
           state.buttons.colours[i].size * ratio;
         state.buttons.colours[i].clientRadius =
           state.buttons.colours[i].radius * ratio;
+      }
+
+      for (let i = 0; i < state.buttons.tools.length; i++) {
+        state.buttons.tools[i].clientSize = state.buttons.tools[i].size * ratio;
+        state.buttons.tools[i].clientImageSize =
+          state.buttons.tools[i].imageSize * ratio;
+      }
+
+      for (let i = 0; i < state.buttons.specials.length; i++) {
+        state.buttons.specials[i].clientSize =
+          state.buttons.specials[i].size * ratio;
+        state.buttons.specials[i].clientImageSize =
+          state.buttons.specials[i].imageSize * ratio;
       }
 
       return state;
@@ -297,10 +360,10 @@ class Toolbar extends React.Component {
                 {buttons.tools.map(button => (
                   <IconButton
                     key={button.id}
-                    width={button.size}
-                    height={button.size}
+                    width={button.clientSize}
+                    height={button.clientSize}
                     image={button.image}
-                    imageSize={button.imageSize}
+                    imageSize={button.clientImageSize}
                     selected={button.selected}
                     setActive={() => {
                       this.setSelectedTool(button.id);
@@ -310,49 +373,23 @@ class Toolbar extends React.Component {
               </div>
               <div
                 style={{
-                  width: "2vw",
+                  width: "8vw",
                   display: "flex",
                   flexWrap: "wrap"
                 }}
               >
-                <IconButton
-                  width={50}
-                  height={50}
-                  imageSize={20}
-                  image={ResetImage}
-                  setActive={() => {
-                    if (this.props.turn) {
-                      sendResetCanvas();
-                      this.props.resetCanvas();
-                    }
-                  }}
-                />
-
-                <IconButton
-                  width={50}
-                  height={50}
-                  imageSize={20}
-                  image={ResetImage}
-                  setActive={() => {
-                    if (this.props.turn) {
-                      sendUndo();
-                      this.props.undo();
-                    }
-                  }}
-                />
-
-                <IconButton
-                  width={50}
-                  height={50}
-                  imageSize={20}
-                  image={ResetImage}
-                  setActive={() => {
-                    if (this.props.turn) {
-                      sendRedo();
-                      this.props.redo();
-                    }
-                  }}
-                />
+                {buttons.specials.map(button => (
+                  <IconButton
+                    key={button.id}
+                    width={button.clientSize}
+                    height={button.clientSize}
+                    image={button.image}
+                    imageSize={button.clientImageSize}
+                    setActive={() => {
+                      button.function();
+                    }}
+                  />
+                ))}
               </div>
             </Row>
           </div>

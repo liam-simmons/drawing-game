@@ -59,6 +59,42 @@ class Chatroom extends React.Component {
         });
         break;
       }
+      case "guessedMessage": {
+        this.setState(prevState => {
+          const messages = [
+            ...prevState.messages,
+            { message: `${data.username} has guessed the word!  `, id: data.id }
+          ];
+          return { ...prevState, messages };
+        });
+        break;
+      }
+      case "everyoneGuessedMessage": {
+        this.setState(prevState => {
+          const messages = [
+            ...prevState.messages,
+            {
+              message: `Everyone has guessed the word! The word was ${data.word}`,
+              id: data.id
+            }
+          ];
+          return { ...prevState, messages };
+        });
+        break;
+      }
+      case "timerRanOutMessage": {
+        this.setState(prevState => {
+          const messages = [
+            ...prevState.messages,
+            {
+              message: `The timer has ran out! The word was ${data.word}`,
+              id: data.id
+            }
+          ];
+          return { ...prevState, messages };
+        });
+        break;
+      }
       default:
         break;
     }

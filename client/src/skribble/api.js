@@ -1,5 +1,4 @@
 import io from "socket.io-client";
-//const socket = openSocket("http://localhost:3231");
 const socket = io();
 
 export function subscribeToMyId(callback) {

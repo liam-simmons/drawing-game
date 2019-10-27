@@ -28,7 +28,7 @@ let nextId = 0;
 
 let messageId = 0;
 
-const timerLength = 40;
+const timerLength = 80;
 
 let turnTimer = 0;
 let turnTimerInterval;
@@ -190,7 +190,9 @@ const newTurn = () => {
 const setupRound = () => {
   io.emit("set-timer", { time: timerLength }); // change later
   turnTimer = timerLength;
+  turnTimerInterval && clearInterval(turnTimerInterval);
   turnTimerInterval = setInterval(() => {
+    console.log("turnTimer", turnTimer);
     turnTimer--;
     if (turnTimer <= 0) {
       clearInterval(turnTimerInterval);

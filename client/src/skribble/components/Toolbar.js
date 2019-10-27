@@ -103,7 +103,7 @@ class Toolbar extends React.Component {
             id: 4,
             radius: 10,
             colour: "#FFFF00",
-            colourRGB: [0, 255, 255],
+            colourRGB: [255, 255, 0],
             selected: false,
             size: 50,
             clientSize: 50,

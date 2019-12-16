@@ -4,6 +4,8 @@ import { BrowserRouter, Route } from "react-router-dom";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 
+document.body.style = "background: #2770a3;";
+
 ReactDOM.render(
   <BrowserRouter>
     <Route component={App} />

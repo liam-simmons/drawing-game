@@ -8,9 +8,7 @@ import Join from "./components/Join";
 import Timer from "./components/Timer";
 import { sendName } from "./api";
 
-document.body.style = "background: #152234;";
-
-class Skribble extends React.Component {
+class DrawingGame extends React.Component {
   constructor() {
     super();
 
@@ -57,4 +55,4 @@ class Skribble extends React.Component {
   }
 }
 
-export default Skribble;
+export default DrawingGame;

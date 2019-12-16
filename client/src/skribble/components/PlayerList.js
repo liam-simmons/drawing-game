@@ -23,7 +23,6 @@ class PlayerList extends React.Component {
   handleData = data => {
     switch (data.type) {
       case "newTurn":
-        console.log("RESETTING");
         this.setState(prevState => {
           const state = { ...prevState };
           for (let i = 0; i < state.playerList.length; i++)
@@ -72,11 +71,9 @@ class PlayerList extends React.Component {
                 : { backgroundColor: "#FFFFFF" }
             }
           >
-            <strong>{player.username}</strong> (ID: {player.id}){" - "}
-            <strong>
-              {this.state.playerList[i].id === this.state.turnId &&
-                "Currently drawing"}
-            </strong>
+            <strong>{player.username}</strong>
+            {this.state.playerList[i].id === this.state.turnId &&
+              " - Currently drawing"}
           </ListGroup.Item>
         ))}
       </ListGroup>

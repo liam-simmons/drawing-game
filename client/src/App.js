@@ -17,18 +17,21 @@ class App extends Component {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="mr-auto">
-              <Link to="/">
-                <Nav.Link
+              <Nav.Link>
+                <Link
                   style={{
                     color: "#cccccc"
                   }}
+                  to="/"
                 >
                   Home
-                </Nav.Link>
-              </Link>
-              <Link to="/play">
-                <Nav.Link style={{ color: "#cccccc" }}>Play</Nav.Link>
-              </Link>
+                </Link>
+              </Nav.Link>
+              <Nav.Link>
+                <Link style={{ color: "#cccccc" }} to="/play">
+                  Play
+                </Link>
+              </Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Navbar>

@@ -301,7 +301,7 @@ class Toolbar extends React.Component {
       <div style={styles}>
         {this.props.turn ? (
           <div>
-            <Row>
+            <Row className="mx-0">
               <div
                 style={{
                   width: "12vw",

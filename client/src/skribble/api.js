@@ -1,4 +1,4 @@
-import io from "socket.io-client";
+import { io } from "socket.io-client";
 const socket = io();
 
 export function subscribeToMyId(callback) {
@@ -57,8 +57,6 @@ export const subscribeToWords = callback => {
 };
 
 export const subscribeToPlayerList = callback => {
-  socket.emit("request-player-list");
-
   socket.on("player-list", list => {
     callback({ list, type: "playerList" });
   });
@@ -107,4 +105,8 @@ export function sendChatMessage(username, message) {
 
 export const sendName = name => {
   socket.emit("name", name);
+};
+
+export const requestCurrentState = () => {
+  socket.emit("request-current-state");
 };

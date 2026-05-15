@@ -6,12 +6,15 @@ import {
   subscribeToFilling,
   subscribeToTurns,
   subscribeToResetCanvas,
-  subscribeToMyId
+  subscribeToMyId,
+  requestCurrentState,
 } from "./../api";
 import Toolbar from "./Toolbar";
 class Canvas extends React.Component {
   constructor(props) {
     super();
+
+    this.canvasRef = React.createRef();
 
     this.state = {
       width: props.width,
@@ -31,8 +34,6 @@ class Canvas extends React.Component {
 
       myId: -1
     };
-
-    //this.onKeyDown = this.onKeyDown.bind(this);
 
     subscribeToMyId(id => {
       this.setState({ myId: id });
@@ -58,7 +59,12 @@ class Canvas extends React.Component {
         if (data.turn === state.myId) state.turn = true;
         else {
           state.turn = false;
-          clearInterval(state.actionLoop);
+          if (state.actionLoop) {
+            clearInterval(state.actionLoop);
+            state.actionLoop = null;
+            state.lastX = null;
+            state.lastY = null;
+          }
         }
         return state;
       });
@@ -66,23 +72,52 @@ class Canvas extends React.Component {
   }
 
   componentDidMount() {
-    const canvas = this.refs.canvas;
+    const canvas = this.canvasRef.current;
     const ctx = canvas.getContext("2d");
     canvas.addEventListener("mousedown", this.onMouseDown, false);
+    canvas.addEventListener("mouseleave", this.onMouseUp, false);
     window.addEventListener("mouseup", this.onMouseUp, false);
-    //canvas.addEventListener("keydown", this.onKeyDown, false);
+    window.addEventListener("blur", this.onMouseUp, false);
+    document.addEventListener("visibilitychange", this.onVisibilityChange, false);
 
     this.setState({ ctx });
-    this.resetCanvas();
 
-    const ratio = canvas.clientWidth / canvas.width;
+    // Ask the server for current game state. Fires here so it's queued on the
+    // wire AFTER sendName (TCP ordering) — the server's request-current-state
+    // handler is only registered once the name event is processed.
+    requestCurrentState();
 
-    this.setState({ ratio });
+    // Defer the initial white fill until after React has flushed the setState
+    // calls above and the browser has completed its layout/paint pass.
+    // Calling fillRect synchronously in componentDidMount gets wiped out when
+    // React re-renders the canvas element to apply the batched state updates.
+    requestAnimationFrame(() => this.resetCanvas());
   }
+
+  componentWillUnmount() {
+    const canvas = this.canvasRef.current;
+    if (canvas) {
+      canvas.removeEventListener("mousedown", this.onMouseDown, false);
+      canvas.removeEventListener("mouseleave", this.onMouseUp, false);
+    }
+    window.removeEventListener("mouseup", this.onMouseUp, false);
+    window.removeEventListener("blur", this.onMouseUp, false);
+    document.removeEventListener(
+      "visibilitychange",
+      this.onVisibilityChange,
+      false
+    );
+    this.stopPainting();
+  }
+
+  onVisibilityChange = () => {
+    if (document.hidden) this.stopPainting();
+  };
 
   //change this to from the state?
   resetCanvas = () => {
-    const canvas = this.refs.canvas;
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
     canvas.style.height = "auto";
     canvas.style.width = "100%";
 
@@ -94,7 +129,7 @@ class Canvas extends React.Component {
   };
 
   undo = () => {
-    const ctx = this.refs.canvas.getContext("2d");
+    const ctx = this.canvasRef.current.getContext("2d");
 
     const { prevCanvasDatas, canvasDataIndex } = this.state;
     this.setState(prevState => {
@@ -114,7 +149,7 @@ class Canvas extends React.Component {
   };
 
   redo = () => {
-    const ctx = this.refs.canvas.getContext("2d");
+    const ctx = this.canvasRef.current.getContext("2d");
 
     const { prevCanvasDatas, canvasDataIndex } = this.state;
     this.setState(prevState => {
@@ -167,7 +202,7 @@ class Canvas extends React.Component {
     }
 
     //add it to state
-    const ctx = this.refs.canvas.getContext("2d");
+    const ctx = this.canvasRef.current.getContext("2d");
     const canvasData = ctx.getImageData(
       0,
       0,
@@ -183,20 +218,40 @@ class Canvas extends React.Component {
   };
 
   onMouseUp = e => {
-    clearInterval(this.state.actionLoop);
-    this.setState({ actionLoop: null, lastX: null, lastY: null });
+    this.stopPainting();
+  };
+
+  stopPainting = () => {
+    this.setState(prevState => {
+      if (prevState.actionLoop) clearInterval(prevState.actionLoop);
+      return { actionLoop: null, lastX: null, lastY: null };
+    });
   };
 
   onMouseMove = e => {
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const scaleX = this.state.width / rect.width;
+    const scaleY = this.state.height / rect.height;
+
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+
     this.setState({
-      //round rather than floor maybe?
-      x: Math.floor(e.nativeEvent.offsetX / this.state.ratio),
-      y: Math.floor(e.nativeEvent.offsetY / this.state.ratio)
+      x,
+      y
     });
   };
 
   paint = () => {
     const { x, y, lastX, lastY, colour, radius } = this.state;
+    if (!this.state.turn || x === undefined || y === undefined) {
+      this.stopPainting();
+      return;
+    }
 
     this.drawCircle2(x, y, lastX, lastY, colour, radius);
     sendDrawInfo(x, y, lastX, lastY, colour, radius);
@@ -240,7 +295,7 @@ class Canvas extends React.Component {
       circleArray.push(Math.round(y));
     }
 
-    const ctx = this.refs.canvas.getContext("2d");
+    const ctx = this.canvasRef.current.getContext("2d");
 
     let canvasData = ctx.getImageData(
       0,
@@ -522,47 +577,53 @@ class Canvas extends React.Component {
   };
 
   fill = (x, y, fillColour) => {
-    const ctx = this.refs.canvas.getContext("2d");
+    const ctx = this.canvasRef.current.getContext("2d");
+    const { width, height } = this.state;
 
     const targetColour = ctx.getImageData(x, y, 1, 1).data;
-    //const targetColour = [255, 255, 255, 255];
 
-    let canvasData = ctx.getImageData(
-      0,
-      0,
-      this.state.width,
-      this.state.height
-    );
-    const pixelsToCheck = [{ x, y }];
-    const pixelsChecked = [];
-    pixelsChecked[x + this.state.width * y] = true;
+    // Bail out early if the target pixel is already the fill colour.
+    if (
+      targetColour[0] === fillColour[0] &&
+      targetColour[1] === fillColour[1] &&
+      targetColour[2] === fillColour[2]
+    ) return;
 
-    //let temp = 0;
-    while (pixelsToCheck.length > 0) {
-      //temp++;
-      const dogman = pixelsToCheck.length;
-      for (let i = 0; i < dogman; i++) {
-        if (
-          this.checkPixelColour(
-            targetColour,
-            pixelsToCheck[0].x,
-            pixelsToCheck[0].y,
-            canvasData.data
-          )
-        ) {
-          this.setPixelColour(
-            canvasData.data,
-            pixelsToCheck[0].x,
-            pixelsToCheck[0].y,
-            fillColour
-          );
-          this.addSurroundingPixels(pixelsToCheck, pixelsChecked);
-        }
-        pixelsToCheck.splice(0, 1);
+    const canvasData = ctx.getImageData(0, 0, width, height);
+
+    // Store pixel indices as flat integers to avoid per-pixel object allocation.
+    // Use pop() instead of splice(0,1) so queue operations are O(1) not O(n).
+    const queue = [x + y * width];
+    const visited = new Uint8Array(width * height);
+    visited[x + y * width] = 1;
+
+    while (queue.length > 0) {
+      const idx = queue.pop();
+      const px = idx % width;
+      const py = (idx / width) | 0;
+
+      if (!this.checkPixelColour(targetColour, px, py, canvasData.data)) continue;
+
+      this.setPixelColour(canvasData.data, px, py, fillColour);
+
+      if (px + 1 < width && !visited[idx + 1]) {
+        visited[idx + 1] = 1;
+        queue.push(idx + 1);
       }
-
-      //if (temp > 1000) break;
+      if (px - 1 >= 0 && !visited[idx - 1]) {
+        visited[idx - 1] = 1;
+        queue.push(idx - 1);
+      }
+      if (py + 1 < height && !visited[idx + width]) {
+        visited[idx + width] = 1;
+        queue.push(idx + width);
+      }
+      if (py - 1 >= 0 && !visited[idx - width]) {
+        visited[idx - width] = 1;
+        queue.push(idx - width);
+      }
     }
+
     ctx.putImageData(canvasData, 0, 0);
   };
 
@@ -585,44 +646,6 @@ class Canvas extends React.Component {
       canvasData[id + 1] === targetColour[1] &&
       canvasData[id + 2] === targetColour[2]
     );
-  };
-
-  addSurroundingPixels = (pixelsToCheck, pixelsChecked) => {
-    const x = pixelsToCheck[0].x,
-      y = pixelsToCheck[0].y;
-
-    if (!pixelsChecked[x + 1 + y * this.state.width] && x < this.state.width) {
-      pixelsToCheck.push({
-        x: x + 1,
-        y: y
-      });
-      pixelsChecked[x + 1 + y * this.state.width] = true;
-    }
-    if (
-      !pixelsChecked[x + (y + 1) * this.state.width] &&
-      y < this.state.height
-    ) {
-      pixelsToCheck.push({
-        x: x,
-        y: y + 1
-      });
-      pixelsChecked[x + (y + 1) * this.state.width] = true;
-    }
-    if (!pixelsChecked[x - 1 + y * this.state.width] && x !== 0) {
-      pixelsToCheck.push({
-        x: x - 1,
-        y: y
-      });
-      pixelsChecked[x - 1 + y * this.state.width] = true;
-    }
-    if (!pixelsChecked[x + (y - 1) * this.state.width] && y !== 0) {
-      pixelsToCheck.push({
-        x: x,
-        y: y - 1
-      });
-      pixelsChecked[x + (y - 1) * this.state.width] = true;
-    }
-    //return canvasData;
   };
 
   setColour = colour => {
@@ -666,12 +689,10 @@ class Canvas extends React.Component {
       <div>
         <div className="float-none">
           <canvas
-            ref="canvas"
-            //onClick={e => this.onClick(e)}
+            ref={this.canvasRef}
             onMouseMove={this.onMouseMove}
             width={width}
             height={height}
-            clientWidth={100}
           />
         </div>
 

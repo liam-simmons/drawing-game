@@ -49,11 +49,12 @@ class PlayerList extends React.Component {
         this.setState({ playerList: data.list });
         break;
       case "playerGuessed":
-        this.setState(prevState => {
-          const state = { ...prevState };
-          state.playerList[data.playerId].hasGuessed = true;
-          return state;
-        });
+        this.setState(prevState => ({
+          ...prevState,
+          playerList: prevState.playerList.map(p =>
+            p.id === data.playerId ? { ...p, hasGuessed: true } : p
+          ),
+        }));
         break;
       default:
         break;
@@ -65,6 +66,7 @@ class PlayerList extends React.Component {
       <ListGroup variant="flush" style={{ float: "right", width: "80%" }}>
         {this.state.playerList.map((player, i) => (
           <ListGroup.Item
+            key={player.id}
             style={
               this.state.playerList[i].hasGuessed
                 ? { backgroundColor: "#00FF00" }

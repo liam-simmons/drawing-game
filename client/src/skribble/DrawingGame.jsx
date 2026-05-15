@@ -27,7 +27,7 @@ class DrawingGame extends React.Component {
       <div className="App">
         {this.state.name ? (
           <div>
-            <Row>
+            <Row className="mx-0">
               <Col xs={2}>
                 <Timer />
               </Col>
@@ -35,7 +35,7 @@ class DrawingGame extends React.Component {
                 <Word />
               </Col>
             </Row>
-            <Row>
+            <Row className="mx-0">
               <Col xs={2}>
                 <PlayerList />
               </Col>

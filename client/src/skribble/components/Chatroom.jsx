@@ -7,6 +7,8 @@ class Chatroom extends React.Component {
   constructor(props) {
     super();
 
+    this.chatroomRef = React.createRef();
+
     this.state = {
       messages: [],
       chatBox: "",
@@ -15,8 +17,6 @@ class Chatroom extends React.Component {
 
     subscribeToChat(this.handleReceivedMessage);
   }
-
-  componentWillUpdate() {}
 
   componentDidUpdate() {
     const test = this.updateScrollDownValue();
@@ -112,19 +112,19 @@ class Chatroom extends React.Component {
   };
 
   onEnterPress = e => {
-    if (e.keyCode === 13 && e.shiftKey === false) {
+    if (e.key === "Enter" && e.shiftKey === false) {
       e.preventDefault();
       this.onSubmit();
     }
   };
 
   scrollToBottom = () => {
-    const chatroom = this.refs.chatroom;
+    const chatroom = this.chatroomRef.current;
     chatroom.scrollTop = chatroom.scrollHeight;
   };
 
   updateScrollDownValue = () => {
-    const chatroom = this.refs.chatroom;
+    const chatroom = this.chatroomRef.current;
     const chatMessageLength = chatroom.firstChild.lastChild
       ? chatroom.firstChild.lastChild.clientHeight
       : 0;
@@ -157,7 +157,7 @@ class Chatroom extends React.Component {
             height: "95%",
             width: "80%"
           }}
-          ref="chatroom"
+          ref={this.chatroomRef}
         >
           <MessageBox
             updateScrollDownValue={this.updateScrollDownValue}
@@ -175,7 +175,7 @@ class Chatroom extends React.Component {
           value={chatBox}
           style={{ width: "80%", height: "5%" }}
           onKeyDown={this.onEnterPress}
-          autocomplete="off"
+          autoComplete="off"
         />
       </div>
     );

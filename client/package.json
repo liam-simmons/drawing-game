@@ -1,30 +1,35 @@
 {
-  "name": "client",
+  "name": "drawing-game-client",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
   "dependencies": {
-    "bootstrap": "^4.2.1",
-    "react": "^16.8.1",
-    "react-bootstrap": "^1.0.0-beta.5",
-    "react-dom": "^16.8.1",
-    "react-router-dom": "^4.3.1",
-    "react-scripts": "2.1.4",
-    "socket.io": "^2.2.0"
+    "bootstrap": "^5.3.3",
+    "react": "^18.3.1",
+    "react-bootstrap": "^2.10.9",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "browserslist": [
     ">0.2%",
     "not dead",
-    "not ie <= 11",
     "not op_mini all"
   ]
 }

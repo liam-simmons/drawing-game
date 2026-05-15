@@ -1,6 +1,6 @@
 const express = require("express");
 const fs = require("fs");
-const { replaceAt, maskWord, isCloseGuess } = require("./utils");
+const { maskWord, isCloseGuess, revealRandomHiddenChar } = require("./utils");
 const app = express();
 const server = require("http").createServer(app);
 const socketIO = require("socket.io");
@@ -27,6 +27,7 @@ let nextId = 0;
 let messageId = 0;
 
 const timerLength = 80;
+const revealMoments = new Set([60, 40, 20]);
 
 let turnTimer = 0;
 let turnTimerInterval;
@@ -50,7 +51,6 @@ fs.readFile("words.txt", (err, data) => {
 
 let word = "";
 let publicWord = "";
-let loopFunction = null;
 let turnTimeout = null;
 
 let turnId = null;
@@ -143,7 +143,6 @@ io.on("connection", socket => {
       checkAllGuessed();
 
       if (PLAYER_LIST.length === 1) {
-        loopFunction && clearInterval(loopFunction);
         turnTimeout && clearTimeout(turnTimeout);
 
         io.emit("turn-change", { turn: -1 });
@@ -176,11 +175,15 @@ const newTurn = () => {
 };
 
 const setupRound = () => {
-  io.emit("set-timer", { time: timerLength });
   turnTimer = timerLength;
+  io.emit("set-timer", { time: turnTimer });
   turnTimerInterval && clearInterval(turnTimerInterval);
   turnTimerInterval = setInterval(() => {
     turnTimer--;
+    io.emit("set-timer", { time: turnTimer });
+    if (revealMoments.has(turnTimer)) {
+      revealLetter();
+    }
     if (turnTimer <= 0) {
       clearInterval(turnTimerInterval);
       io.emit("timer-ran-out", { id: messageId, word });
@@ -202,8 +205,6 @@ const newWord = () => {
   const wordId = Math.floor(Math.random() * WORD_LIST.length);
   word = WORD_LIST[wordId];
   setPublicWord();
-  loopFunction && clearInterval(loopFunction);
-  loopFunction = setInterval(revealLetter, 80000, sock);
   turnTimeout && clearTimeout(turnTimeout);
   turnTimeout = setTimeout(newTurn, 180000);
 
@@ -225,9 +226,15 @@ const setPublicWord = () => {
 };
 
 const revealLetter = sock => {
-  let index = Math.floor(Math.random() * word.length);
-  publicWord = replaceAt(publicWord, index, word[index]);
-  sock && sock.broadcast.emit("word-update", publicWord);
+  const updatedPublicWord = revealRandomHiddenChar(word, publicWord);
+  if (updatedPublicWord === publicWord) return;
+  publicWord = updatedPublicWord;
+
+  let drawingSocket = sock;
+  if (!drawingSocket && PLAYER_LIST[turnId]) {
+    drawingSocket = SOCKET_LIST[PLAYER_LIST[turnId].id];
+  }
+  drawingSocket && drawingSocket.broadcast.emit("word-update", publicWord);
 };
 
 const playerGuessedWord = (id, username) => {

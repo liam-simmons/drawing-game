@@ -1,11 +1,10 @@
 import React from "react";
 
-import { subscribeToTimer, subscribeToTurns } from "./../api";
+import { subscribeToTimer } from "./../api";
 
 class Timer extends React.Component {
   state = {
-    time: 0,
-    on: false
+    time: 0
   };
 
   constructor() {
@@ -14,26 +13,6 @@ class Timer extends React.Component {
     subscribeToTimer(data => {
       this.setState({ time: data.time });
     });
-
-    subscribeToTurns(data => {
-      if (data.turn >= 0) this.setState({ on: true });
-      else this.setState({ on: false });
-    });
-  }
-
-  componentDidMount() {
-    this.interval = setInterval(
-      () =>
-        this.setState(prevState => {
-          const state = { ...prevState };
-          if (state.time > 0 && state.on) state.time--;
-          return state;
-        }),
-      1000
-    );
-  }
-  componentWillUnmount() {
-    clearInterval(this.interval);
   }
 
   render() {

@@ -1,4 +1,9 @@
-const { replaceAt, maskWord, isCloseGuess } = require("../utils");
+const {
+  replaceAt,
+  maskWord,
+  isCloseGuess,
+  revealRandomHiddenChar,
+} = require("../utils");
 
 describe("replaceAt", () => {
   test("replaces a character in the middle", () => {
@@ -71,5 +76,25 @@ describe("isCloseGuess", () => {
 
   test("is case-insensitive and trims spaces", () => {
     expect(isCloseGuess("  CaTt ", "cat")).toBe(true);
+  });
+});
+
+describe("revealRandomHiddenChar", () => {
+  test("reveals one hidden letter", () => {
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    expect(revealRandomHiddenChar("cat", "___")).toBe("c__");
+    Math.random = originalRandom;
+  });
+
+  test("does not change spaces or hyphens", () => {
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    expect(revealRandomHiddenChar("a-b c", "_-_ _")).toBe("a-_ _");
+    Math.random = originalRandom;
+  });
+
+  test("returns same word when fully revealed", () => {
+    expect(revealRandomHiddenChar("cat", "cat")).toBe("cat");
   });
 });

@@ -1,6 +1,6 @@
 # Drawing Game
 
-A real-time multiplayer drawing and guessing game. One player draws a word while others try to guess it in the chat — similar to Skribbl.io.
+A real-time multiplayer drawing and guessing game. One player draws a word while others try to guess it in the chat - similar to Skribbl.io.
 
 ## How it works
 
@@ -13,13 +13,20 @@ A real-time multiplayer drawing and guessing game. One player draws a word while
 
 ## Tech Stack
 
-- **Server:** Node.js, Express, Socket.IO v4
-- **Client:** React 18, React Bootstrap 2, React Router 6, Vite
+- **Server:** Node.js, Express 5, Socket.IO v4
+- **Client:** React 19, React Bootstrap 2, React Router 7, Vite 8
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v18 or newer
-- npm v8 or newer
+- [Node.js](https://nodejs.org/) `22.13.0` (recommended, see `.nvmrc`)
+- npm `10+`
+
+If you use NVM:
+
+```bash
+nvm install
+nvm use
+```
 
 ## Running locally
 
@@ -28,14 +35,14 @@ A real-time multiplayer drawing and guessing game. One player draws a word while
 In the project root:
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 2. Install client dependencies
 
 ```bash
 cd client
-npm install
+npm ci
 cd ..
 ```
 
@@ -71,4 +78,4 @@ cd client
 npm run build
 ```
 
-This outputs a static bundle to `client/build/`. The Express server already serves it — just run `npm start` from the project root and visit **http://localhost:5000**.
+This outputs a static bundle to `client/build/`. The Express server already serves it - just run `npm start` from the project root and visit **http://localhost:5000**.

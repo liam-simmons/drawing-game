@@ -51,4 +51,18 @@ function isCloseGuess(guess, answer) {
   return true;
 }
 
-module.exports = { replaceAt, maskWord, isCloseGuess };
+function revealRandomHiddenChar(answer, currentPublicWord) {
+  const hiddenIndices = [];
+  for (let i = 0; i < answer.length; i++) {
+    if (currentPublicWord[i] === "_" && answer[i] !== " " && answer[i] !== "-") {
+      hiddenIndices.push(i);
+    }
+  }
+
+  if (hiddenIndices.length === 0) return currentPublicWord;
+
+  const revealIndex = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+  return replaceAt(currentPublicWord, revealIndex, answer[revealIndex]);
+}
+
+module.exports = { replaceAt, maskWord, isCloseGuess, revealRandomHiddenChar };
